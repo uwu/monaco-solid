@@ -1,5 +1,5 @@
 import { Component, createEffect, onCleanup, Setter } from "solid-js";
-import loader from "@monaco-editor/loader";
+import loader, { Monaco } from "@monaco-editor/loader";
 import { editor } from "monaco-editor";
 
 type CfgOpts = Omit<
@@ -18,6 +18,16 @@ type MonacoCompType = Component<{
   width?: string;
 }>;
 
+const processTheme = async (t: string, monaco: Monaco) => {
+  if (!t || !t.trim()) return;
+
+  const u = `https://cdn.esm.sh/monaco-themes@0.4.2/themes/${t}.json`;
+
+  const theme = await fetch(u).then((r) => r.json());
+
+  monaco.editor.defineTheme(t, theme);
+};
+
 export default ((props) => {
   let dispose: () => void;
   let cancel = false;
@@ -25,6 +35,8 @@ export default ((props) => {
   const refCb = async (elem: HTMLDivElement) => {
     const monaco = await loader.init();
     if (cancel) return;
+
+    await processTheme(props.theme, monaco);
 
     const ed = monaco.editor.create(elem, {
       language: props.lang,
@@ -36,15 +48,31 @@ export default ((props) => {
 
     dispose = ed.dispose;
 
-    ed.onDidChangeModelContent(() => props.valOut?.(ed.getValue()));
+    // stops syntax highlighting flickering
+    let valueAntiflicker = false;
+
+    ed.onDidChangeModelContent(() => {
+      valueAntiflicker = true;
+      props.valOut?.(ed.getValue());
+      valueAntiflicker = false;
+    });
 
     createEffect(() => ed.updateOptions({ readOnly: props.readonly }));
-    createEffect(() => ed.setValue(props.value));
-    createEffect(() => ed.updateOptions({ theme: props.theme }));
+
+    createEffect(() => {
+      props.value;
+      if (!valueAntiflicker) ed.setValue(props.value);
+    });
+
+    createEffect(async () => {
+      await processTheme(props.theme, monaco);
+      ed.updateOptions({ theme: props.theme });
+    });
+
     createEffect(() => {
       const model = ed.getModel();
       if (!model) return;
-      editor.setModelLanguage(model, props.lang);
+      monaco.editor.setModelLanguage(model, props.lang);
       ed.setModel(model);
     });
   };
