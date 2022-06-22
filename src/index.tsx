@@ -4,7 +4,7 @@ import { editor } from "monaco-editor";
 
 type CfgOpts = Omit<
   editor.IStandaloneEditorConstructionOptions,
-  "language" | "value" | "readOnly"
+  "language" | "value" | "readOnly" | "theme"
 >;
 
 type MonacoCompType = Component<{
@@ -12,7 +12,10 @@ type MonacoCompType = Component<{
   value: string;
   valOut?: Setter<string>;
   readonly?: boolean;
+  theme?: string;
   otherCfg?: CfgOpts;
+  height?: string;
+  width?: string;
 }>;
 
 export default ((props) => {
@@ -27,6 +30,7 @@ export default ((props) => {
       language: props.lang,
       value: props.value,
       readOnly: props.readonly ?? false,
+      theme: props.theme,
       ...props.otherCfg,
     });
 
@@ -36,6 +40,7 @@ export default ((props) => {
 
     createEffect(() => ed.updateOptions({ readOnly: props.readonly }));
     createEffect(() => ed.setValue(props.value));
+    createEffect(() => ed.updateOptions({ theme: props.theme }));
     createEffect(() => {
       const model = ed.getModel();
       if (!model) return;
@@ -49,5 +54,10 @@ export default ((props) => {
     dispose?.();
   });
 
-  return <div ref={refCb} />;
+  return (
+    <div
+      ref={refCb}
+      style={{ width: props.width ?? "30rem", height: props.height ?? "10rem" }}
+    />
+  );
 }) as MonacoCompType;

@@ -9,7 +9,7 @@ render(() => {
   return (
     <>
       <h1>Monaco solid test</h1>
-      <Monaco value={val()} lang="js" valOut={setVal} />
+      <Monaco value={val()} lang="javascript" valOut={setVal} />
       <pre>
         <code>{val()}</code>
       </pre>
