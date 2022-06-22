@@ -46,7 +46,7 @@ export default ((props) => {
       ...props.otherCfg,
     });
 
-    dispose = ed.dispose;
+    dispose = () => ed.dispose();
 
     // stops syntax highlighting flickering
     let valueAntiflicker = false;

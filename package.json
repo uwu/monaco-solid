@@ -1,6 +1,6 @@
 {
   "name": "monaco-solid",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Monaco as an easy to use solid component",
   "main": "dist/index.jsx",
   "module": "dist/index.jsx",
