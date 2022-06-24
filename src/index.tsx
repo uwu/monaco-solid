@@ -1,42 +1,17 @@
-import { Component, createEffect, onCleanup, Setter } from "solid-js";
-import loader, { Monaco } from "@monaco-editor/loader";
-import { editor } from "monaco-editor";
-
-type CfgOpts = Omit<
-  editor.IStandaloneEditorConstructionOptions,
-  "language" | "value" | "readOnly" | "theme"
->;
-
-type MonacoCompType = Component<{
-  lang: string;
-  value: string;
-  valOut?: Setter<string>;
-  readonly?: boolean;
-  theme?: string;
-  otherCfg?: CfgOpts;
-  height?: string;
-  width?: string;
-}>;
-
-const processTheme = async (t: string, monaco: Monaco) => {
-  if (!t || !t.trim()) return;
-
-  const u = `https://cdn.esm.sh/monaco-themes@0.4.2/themes/${t}.json`;
-
-  const theme = await fetch(u).then((r) => r.json());
-
-  monaco.editor.defineTheme(t, theme);
-};
+import { createEffect, onCleanup } from "solid-js";
+import { addThemeIfNeeded, initMonacoIfNeeded, monaco } from "./monaco";
+import type { MonacoCompType } from "./types";
 
 export default ((props) => {
   let dispose: () => void;
-  let cancel = false;
+  let cancelInit = false;
 
   const refCb = async (elem: HTMLDivElement) => {
-    const monaco = await loader.init();
-    if (cancel) return;
+    await initMonacoIfNeeded();
 
-    await processTheme(props.theme, monaco);
+    await addThemeIfNeeded(props.theme);
+
+    if (cancelInit) return;
 
     const ed = monaco.editor.create(elem, {
       language: props.lang,
@@ -49,23 +24,22 @@ export default ((props) => {
     dispose = () => ed.dispose();
 
     // stops syntax highlighting flickering
-    let valueAntiflicker = false;
+    //let valueAntiflicker = false;
 
     ed.onDidChangeModelContent(() => {
-      valueAntiflicker = true;
+      //valueAntiflicker = true;
       props.valOut?.(ed.getValue());
-      valueAntiflicker = false;
+      //valueAntiflicker = false;
     });
 
     createEffect(() => ed.updateOptions({ readOnly: props.readonly }));
 
     createEffect(() => {
-      props.value;
-      if (!valueAntiflicker) ed.setValue(props.value);
+      if (props.value !== ed.getValue()) ed.setValue(props.value);
     });
 
     createEffect(async () => {
-      await processTheme(props.theme, monaco);
+      await addThemeIfNeeded(props.theme);
       ed.updateOptions({ theme: props.theme });
     });
 
@@ -78,7 +52,7 @@ export default ((props) => {
   };
 
   onCleanup(() => {
-    cancel = true;
+    cancelInit = true;
     dispose?.();
   });
 
