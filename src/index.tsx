@@ -7,7 +7,7 @@ export default ((props) => {
   let cancelInit = false;
 
   const refCb = async (elem: HTMLDivElement) => {
-    await initMonacoIfNeeded();
+    await initMonacoIfNeeded(props.noCDN);
 
     await addThemeIfNeeded(props.theme);
 
@@ -23,14 +23,7 @@ export default ((props) => {
 
     dispose = () => ed.dispose();
 
-    // stops syntax highlighting flickering
-    //let valueAntiflicker = false;
-
-    ed.onDidChangeModelContent(() => {
-      //valueAntiflicker = true;
-      props.valOut?.(ed.getValue());
-      //valueAntiflicker = false;
-    });
+    ed.onDidChangeModelContent(() => props.valOut?.(ed.getValue()));
 
     createEffect(() => ed.updateOptions({ readOnly: props.readonly }));
 
@@ -49,6 +42,8 @@ export default ((props) => {
       monaco.editor.setModelLanguage(model, props.lang);
       ed.setModel(model);
     });
+
+    createEffect(() => ed.updateOptions(props.otherCfg));
   };
 
   onCleanup(() => {
